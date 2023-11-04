@@ -14,7 +14,6 @@ class VzenseTofCam():
             libpath = os.path.join(API_DIR,'lib','aarch',"libvzense_api.so")
         else:
             libpath = os.path.join(API_DIR,'lib','x86',"libvzense_api.so")
-        print(libpath)
         self.ps_cam_lib = cdll.LoadLibrary(libpath)
             
         self.device_handle = c_void_p(0)

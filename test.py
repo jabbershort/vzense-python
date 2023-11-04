@@ -1,3 +1,3 @@
-from vzense.helper_functions import test
+from vzense.helper_functions import list_available_cameras
 
-test()
+print(list_available_cameras())
