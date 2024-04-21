@@ -9,12 +9,24 @@ API_DIR = os.path.dirname(os.path.realpath(__file__))
 class VzenseTofCam():
     device_handle = c_void_p(0)
     session = c_uint(0)
-    def __init__(self):
-        if 'aarch' in platform.machine():
-            libpath = os.path.join(API_DIR,'lib','aarch',"libvzense_api.so")
-        else:
-            libpath = os.path.join(API_DIR,'lib','x86',"libvzense_api.so")
-        self.ps_cam_lib = cdll.LoadLibrary(libpath)
+    def __init__(self):#
+        if platform.system() == 'Linux':
+            if 'aarch' in platform.machine():
+                libpath = os.path.join(API_DIR,'lib','aarch',"libvzense_api.so")
+            else:
+                libpath = os.path.join(API_DIR,'lib','x86',"libvzense_api.so")
+            self.ps_cam_lib = cdll.LoadLibrary(libpath)
+        elif platform.system() == 'Windows':          
+            lib_dir = os.path.join(API_DIR,'lib','win','x64')
+            print(lib_dir)
+            lib_dir = ';'+lib_dir
+            # sys.path.insert(0,lib_dir)
+            os.environ['path']+=lib_dir
+            libpath = os.path.join(API_DIR,'lib','win','x64',"vzense_api.dll")
+            print(libpath)
+            self.ps_cam_lib = cdll.LoadLibrary(libpath)
+        print(libpath)
+        
             
         self.device_handle = c_void_p(0)
         self.session = c_uint(0)

@@ -10,7 +10,7 @@ from vzense.properties import *
 class VzenseCamera:
     def __init__(self,
                  uri=None,
-                 resolution:CameraResolution=CameraResolution.Res_1920_1080):
+                 resolution:CameraResolution=CameraResolution.Res_640_480):
                  
         if uri is None:
             available_devices = vzense.helper_functions.list_available_cameras()
@@ -85,12 +85,14 @@ class VzenseCamera:
             depth_frame = numpy.ctypeslib.as_array(frame.pFrameData, (1, frame.width * frame.height * 2))
             depth_frame.dtype = numpy.uint16
             depth_frame.shape = (frame.height, frame.width)
+            print(np.min(depth_frame))
+            print(np.max(depth_frame))
         
         logging.debug(f'Received a new frame of shape {color_frame.shape} color and {depth_frame.shape} depth.')
         self.__latest_frame = CameraFrame(time.time(),color_frame,depth_frame,self.intrinsic)
         return self.__latest_frame
 
-    def __del__(self):
+    def __del__(self): 
         ret = self.__camera.Ps2_StopStream()       
         if ret == 0:
             print(f"Stopped {self.name} successful")
