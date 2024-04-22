@@ -11,6 +11,7 @@ class VzenseCamera:
     def __init__(self,
                  uri=None,
                  resolution:CameraResolution=CameraResolution.Res_640_480):
+        # TODO: allow for setting other parameters.
                  
         if uri is None:
             available_devices = vzense.helper_functions.list_available_cameras()
@@ -52,10 +53,21 @@ class VzenseCamera:
         if ret != 0:
             logging.error(f'Failed to set mapping mode with error: {ret}')
             exit()
+
+        ret = self.__camera.Ps2_SetComputeRealDepthCorrectionEnabled(c_bool(True))
+        if ret != 0:
+            logging.error(f'Failed to set real depth correction mode with error: {ret}')
+            exit()
+
+        ret = self.__camera.Ps2_SetSpatialFilterEnabled(c_bool(True))
+        if ret != 0:
+            logging.error(f'Failed to set spatial filtering mode with error: {ret}')
+            exit()
+
         ret, depthrange = self.__camera.Ps2_GetDepthRange()
         ret, self.__depth_max,self.__value_min, self.__value_max = self.__camera.Ps2_GetMeasuringRange(PsDepthRange(depthrange.value))
         if ret != 0:
-            logging.error(f'Failed to get depth parameter aith error code {ret}.')
+            logging.error(f'Failed to get depth parameter with error code {ret}.')
             exit()
 
         ret, params = self.__camera.Ps2_GetCameraParameters(PsSensorType.PsRgbSensor)
@@ -76,6 +88,7 @@ class VzenseCamera:
         if  ret !=0:
             logging.error("Ps2_ReadNextFrame failed:",ret)      
         if  frameready.rgb:      
+            # TODO: make this a constructor of camera frame?
             ret,frame = self.__camera.Ps2_GetFrame(PsFrameType.PsRGBFrame)
             color_frame = numpy.ctypeslib.as_array(frame.pFrameData, (1, frame.width * frame.height * 3))
             color_frame.dtype = numpy.uint8
@@ -85,8 +98,6 @@ class VzenseCamera:
             depth_frame = numpy.ctypeslib.as_array(frame.pFrameData, (1, frame.width * frame.height * 2))
             depth_frame.dtype = numpy.uint16
             depth_frame.shape = (frame.height, frame.width)
-            print(np.min(depth_frame))
-            print(np.max(depth_frame))
         
         logging.debug(f'Received a new frame of shape {color_frame.shape} color and {depth_frame.shape} depth.')
         self.__latest_frame = CameraFrame(time.time(),color_frame,depth_frame,self.intrinsic)
@@ -99,10 +110,3 @@ class VzenseCamera:
         else:
             print('Ps2_StopStream failed: ' + str(ret))  
 
-
-if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    cam = VzenseCamera()
-    cam.connect()
-    latest_frame = cam.update()
-    vzense.helper_functions.view_frame(latest_frame)

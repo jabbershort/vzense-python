@@ -39,15 +39,29 @@ class CameraFrame:
     intrinsic: CamIntrinsics
 
     @property
-    def point_cloud(self) -> o3d.geometry.PointCloud:
+    def rgbd(self):
         rgbd = o3d.geometry.RGBDImage.create_from_color_and_depth(
             o3d.geometry.Image(cv2.cvtColor(self.color_frame,cv2.COLOR_BGR2RGB)), 
             o3d.geometry.Image(self.depth_frame), 
             depth_scale=1000.0, 
             depth_trunc=3.0, 
             convert_rgb_to_intensity=False)
+        return rgbd
+
+    @property
+    def point_cloud(self) -> o3d.geometry.PointCloud:
         pcd = o3d.geometry.PointCloud.create_from_rgbd_image(
-            rgbd, 
+            self.rgbd, 
             self.intrinsic.as_open3d()
             )
         return pcd
+    
+    def mesh(self,size=0.002):
+        tsdf = o3d.pipelines.integration.ScalableTSDFVolume(
+            voxel_length = size,
+            sdf_trunc=0.04,
+            color_type=o3d.pipelines.integration.TSDFVolumeColorType.RGB8)
+        tsdf.integrate(self.rgbd,self.intrinsic.as_open3d(),np.identity(4))
+        mesh = tsdf.extract_triangle_mesh()
+        mesh.compute_vertex_normals()
+        return mesh
